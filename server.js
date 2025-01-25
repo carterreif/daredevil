@@ -5,33 +5,30 @@ const cors = require('cors');
 const { put } = require('@vercel/blob');
 const app = express();
 
-// Enable CORS with specific options
-const corsOptions = {
-    origin: ['https://carterreif.github.io', 'http://localhost:3000'],
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
-    optionsSuccessStatus: 200,
-    credentials: true
+// CORS middleware
+const corsMiddleware = (req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'https://carterreif.github.io');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next();
 };
 
-// Enable CORS preflight for all routes
-app.options('*', cors(corsOptions));
-
-// Enable CORS for all routes
-app.use(cors(corsOptions));
+// Apply CORS middleware to all routes
+app.use(corsMiddleware);
 
 // Serve static files from root directory
 app.use(express.static(__dirname));
-
-// Configure GitHub Pages base path
-const basePath = process.env.NODE_ENV === 'production' ? '/daredevil' : '';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // API endpoints
-app.post(`${basePath}/upload`, upload.single('image'), async (req, res) => {
+app.post('/upload', upload.single('image'), async (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
@@ -51,7 +48,7 @@ app.post(`${basePath}/upload`, upload.single('image'), async (req, res) => {
     }
 });
 
-app.get(`${basePath}/images`, async (req, res) => {
+app.get('/images', async (req, res) => {
     try {
         // For demo purposes, we'll return a success but empty array
         // In a production environment, you would implement listing blobs
@@ -62,7 +59,7 @@ app.get(`${basePath}/images`, async (req, res) => {
     }
 });
 
-// Handle GitHub Pages routing
+// Handle all other routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
