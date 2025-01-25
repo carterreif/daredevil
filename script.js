@@ -7,8 +7,8 @@ const isLocalhost = window.location.hostname === 'localhost' || window.location.
 const apiBaseUrl = isLocalhost 
     ? 'http://localhost:3000'  // Local development
     : window.location.hostname.includes('test') 
-        ? 'https://daredevil-jlqc02j97-ajr1073s-projects.vercel.app'  // Test environment
-        : 'https://daredevil-5tvgwdbas-ajr1073s-projects.vercel.app'; // Production
+        ? 'https://daredevil-oop7gzf6a-ajr1073s-projects.vercel.app'  // Test environment
+        : 'https://daredevil-oop7gzf6a-ajr1073s-projects.vercel.app'; // Production
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
