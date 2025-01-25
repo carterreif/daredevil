@@ -2,41 +2,24 @@
 let galleryImages = [];
 
 // Get API base URL based on environment
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const apiBaseUrl = isLocalhost 
-    ? 'http://localhost:3000'  // Local development
-    : 'https://daredevil-k17e5b221-ajr1073s-projects.vercel.app'; // Production
+const apiBaseUrl = 'https://daredevil-5tvgwdbas-ajr1073s-projects.vercel.app';
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
+
+    // Create status element
     const uploadStatus = document.createElement('div');
     uploadStatus.id = 'uploadStatus';
     document.body.appendChild(uploadStatus);
 
-    // Add styles for storage indicator
-    const style = document.createElement('style');
-    style.textContent = `
-        .storage-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: white;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2;
-        }
-        .gallery-item {
-            position: relative;
-        }
-    `;
-    document.head.appendChild(style);
+    // Load existing images from localStorage
+    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+    savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
 
-    // Load existing images from server
+    // Load existing images
     loadImages();
 
     // Handle image upload
@@ -45,88 +28,101 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadImages() {
         showStatus('Loading images...', 'info');
         try {
-            const response = await fetch(`${apiBaseUrl}/images`);
+            const response = await fetch(`${apiBaseUrl}/images`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                mode: 'cors'
+            });
+
             if (!response.ok) {
-                throw new Error('Failed to load images');
+                const errorText = await response.text();
+                throw new Error(`Failed to load images: ${errorText}`);
             }
 
-            const data = await response.json();
-            console.log('Loaded images:', data);
-            
-            galleryGrid.innerHTML = ''; // Clear existing images
-            if (data && Array.isArray(data)) {
-                data.forEach(image => {
-                    if (image && image.url) {
-                        addImageToGallery(image.url);
-                    }
-                });
-                if (data.length === 0) {
-                    showStatus('No images uploaded yet', 'info');
-                } else {
-                    showStatus('Images loaded successfully', 'success');
-                }
+            const images = await response.json();
+            if (images.length === 0) {
+                showStatus('No images uploaded yet', 'info');
+            } else {
+                images.forEach(image => addImageToGallery(image.url));
+                showStatus('Images loaded successfully', 'success');
             }
         } catch (error) {
             console.error('Error loading images:', error);
-            showStatus('Failed to load images', 'error');
+            showStatus('Failed to load images. Please refresh the page.', 'error');
         }
     }
 
     async function handleImageUpload(event) {
         const file = event.target.files[0];
-        if (!file) return;
+        if (file) {
+            try {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showStatus('Please select an image file', 'error');
+                    return;
+                }
 
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            showStatus('Please select an image file', 'error');
-            return;
-        }
+                // Check file size (limit to 2MB to be safe with localStorage)
+                if (file.size > 2 * 1024 * 1024) {
+                    showStatus('Image must be less than 2MB', 'error');
+                    return;
+                }
 
-        // Validate file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-            showStatus('Image must be less than 5MB', 'error');
-            return;
-        }
-
-        showStatus('Uploading image...', 'info');
-
-        const formData = new FormData();
-        formData.append('image', file);
+                showStatus('Processing image...', 'info');
 
         try {
-            console.log('Uploading to:', `${apiBaseUrl}/upload`);
+            const formData = new FormData();
+            formData.append('image', file);
+
             const response = await fetch(`${apiBaseUrl}/upload`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                mode: 'cors'
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Upload failed');
+                const errorText = await response.text();
+                throw new Error(`Upload failed: ${errorText}`);
             }
 
             const data = await response.json();
-            console.log('Upload response:', data);
-
             if (data.url) {
                 addImageToGallery(data.url);
+                
+                // Save to localStorage
+                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                savedImages.push(data.url);
+                localStorage.setItem('galleryImages', JSON.stringify(savedImages));
+
                 showStatus('Image uploaded successfully!', 'success');
-                imageInput.value = ''; // Clear the input
+                imageInput.value = '';
             } else {
                 throw new Error('No image URL in response');
             }
         } catch (error) {
             console.error('Error uploading image:', error);
-            showStatus(`Upload failed: ${error.message}`, 'error');
+            showStatus('Failed to upload image. Please try again.', 'error');
         }
     }
 
-    function addImageToGallery(imageUrl) {
+    // Helper function to convert File to base64
+    function toBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    function addImageToGallery(imageData) {
         const container = document.createElement('div');
         container.className = 'gallery-item';
         
         const img = document.createElement('img');
-        img.src = imageUrl;
+        img.src = imageData;
         img.alt = 'Gallery Image';
         img.loading = 'lazy';
         
@@ -157,6 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBtn.onclick = function() {
             if (confirm('Delete this image?')) {
                 container.remove();
+                // Remove from localStorage
+                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                const updatedImages = savedImages.filter(url => url !== imageUrl);
+                localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
             }
         };
         
@@ -287,5 +287,36 @@ document.addEventListener('DOMContentLoaded', () => {
         section.style.transform = 'translateY(50px)';
         section.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
         observer2.observe(section);
+    });
+
+    // Mobile menu toggle
+    const hamburger = document.querySelector('.hamburger');
+    const navMenu = document.querySelector('.nav-menu');
+    const navLinks = document.querySelectorAll('.nav-menu a');
+
+    function toggleMenu() {
+        hamburger.classList.toggle('active');
+        navMenu.classList.toggle('active');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
+            hamburger.classList.remove('active');
+            navMenu.classList.remove('active');
+        }
+    });
+
+    hamburger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+    });
+
+    // Close menu when a link is clicked
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            hamburger.classList.remove('active');
+            navMenu.classList.remove('active');
+        });
     });
 });

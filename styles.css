@@ -39,33 +39,118 @@ nav {
 }
 
 .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 2rem;
+    padding: 0 20px;
+    position: relative;
 }
 
-.nav-links {
+.logo {
+    padding: 10px 0;
+}
+
+.nav-menu {
     display: flex;
-    gap: 2rem;
     list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
 }
 
-.nav-links a {
-    color: #ffffff;
+.nav-menu a {
+    color: white;
     text-decoration: none;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: color 0.3s ease;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    padding: 10px 15px;
+    transition: color 0.3s;
 }
 
-.nav-links a:hover {
-    color: var(--accent-red);
+.nav-menu a:hover {
+    color: #ff1919;
     text-shadow: 0 0 10px rgba(255, 25, 25, 0.5);
+}
+
+/* Mobile Menu Styles */
+.hamburger {
+    display: none;
+    cursor: pointer;
+    padding: 10px;
+    z-index: 1001;
+    position: relative;
+}
+
+.hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background-color: white;
+    margin: 4px 0;
+    transition: 0.3s;
+}
+
+@media (max-width: 768px) {
+    .hamburger {
+        display: block;
+    }
+
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 60px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.95);
+        border-radius: 8px;
+        padding: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        width: 160px;
+        z-index: 1000;
+        transform-origin: top;
+        transition: transform 0.3s ease-in-out, opacity 0.2s;
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    .nav-menu.active {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .nav-menu li {
+        margin: 0;
+        padding: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-menu li:last-child {
+        border-bottom: none;
+    }
+
+    .nav-menu a {
+        color: white;
+        padding: 12px 15px;
+        display: block;
+        font-size: 14px;
+        text-align: left;
+        transition: all 0.3s;
+    }
+
+    .nav-menu a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding-left: 20px;
+    }
+
+    .hamburger.active span:nth-child(1) {
+        transform: rotate(-45deg) translate(-5px, 5px);
+    }
+
+    .hamburger.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .hamburger.active span:nth-child(3) {
+        transform: rotate(45deg) translate(-5px, -5px);
+    }
 }
 
 /* Hero Section */
@@ -728,6 +813,33 @@ section h2 {
     transform: scale(1.1);
 }
 
+/* Status Messages */
+#uploadStatus {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: none;
+    z-index: 1000;
+    font-weight: 500;
+}
+
+.status.success {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status.error {
+    background-color: #f44336;
+    color: white;
+}
+
+.status.info {
+    background-color: #2196F3;
+    color: white;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-container {
@@ -947,4 +1059,69 @@ section h2 {
     box-shadow: 
         0 0 20px #808080,
         0 0 40px #606060;
+}
+
+/* Protector Section */
+.protector-section {
+    background-color: #1a1a1a;
+    padding: 80px 0;
+}
+
+.protector-content {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    margin-top: 30px;
+}
+
+.protector-text {
+    flex: 1;
+}
+
+.protector-text p {
+    color: #ffffff;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.protector-image {
+    flex: 1;
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.protector-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(255, 25, 25, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    object-fit: cover;
+    aspect-ratio: 16/9;
+    display: block;
+}
+
+.protector-image img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(255, 25, 25, 0.5);
+}
+
+@media (max-width: 768px) {
+    .protector-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .protector-text {
+        order: 2;
+    }
+
+    .protector-image {
+        order: 1;
+        max-width: 100%;
+        padding: 0 20px;
+    }
 }
