@@ -83,7 +83,10 @@
     <section id="gallery" class="gallery-section">
         <div class="container">
             <h2>Fan Gallery</h2>
-            <button id="upload_widget" class="cloudinary-button">Upload Image</button>
+            <div class="upload-container">
+                <label for="imageInput" class="upload-button">Upload Image</label>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            </div>
             <div id="galleryGrid" class="gallery-grid">
                 <!-- Images will appear here -->
             </div>

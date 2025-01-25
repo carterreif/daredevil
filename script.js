@@ -13,6 +13,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
     savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
 
+    imageInput.addEventListener('change', async function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('key', IMGBB_API_KEY);
+
+                const response = await fetch('https://api.imgbb.com/1/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.data && data.data.url) {
+                    const imageUrl = data.data.url;
+                    addImageToGallery(imageUrl);
+                    
+                    // Save to localStorage
+                    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                    savedImages.push(imageUrl);
+                    localStorage.setItem('galleryImages', JSON.stringify(savedImages));
+                } else {
+                    throw new Error('Failed to get image URL from response');
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                alert('Failed to upload image. Please try again.');
+            }
+        }
+    });
+
+    function addImageToGallery(imageUrl) {
+        const container = document.createElement('div');
+        container.className = 'gallery-item';
+        
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = 'Gallery Image';
+        img.loading = 'lazy';
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.innerHTML = '×';
+        deleteBtn.onclick = function() {
+            if (confirm('Delete this image?')) {
+                container.remove();
+                // Remove from localStorage
+                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                const updatedImages = savedImages.filter(url => url !== imageUrl);
+                localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
+            }
+        };
+        
+        container.appendChild(img);
+        container.appendChild(deleteBtn);
+        galleryGrid.appendChild(container);
+    }
+
     // Cloudinary Upload Widget configuration
     const myWidget = cloudinary.createUploadWidget(
         {
@@ -59,65 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         false
     );
-
-    imageInput.addEventListener('change', async function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            try {
-                const formData = new FormData();
-                formData.append('image', file);
-                formData.append('key', IMGBB_API_KEY);
-
-                const response = await fetch('https://api.imgbb.com/1/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                if (data.data && data.data.url) {
-                    const imageUrl = data.data.url;
-                    addImageToGallery(imageUrl);
-                    
-                    // Save to localStorage
-                    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                    savedImages.push(imageUrl);
-                    localStorage.setItem('galleryImages', JSON.stringify(savedImages));
-                } else {
-                    throw new Error('Failed to upload image');
-                }
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                alert('Failed to upload image. Please try again.');
-            }
-        }
-    });
-
-    function addImageToGallery(imageUrl) {
-        const container = document.createElement('div');
-        container.className = 'gallery-item';
-        
-        const img = document.createElement('img');
-        img.src = imageUrl;
-        img.alt = 'Gallery Image';
-        img.loading = 'lazy';
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.innerHTML = '×';
-        deleteBtn.onclick = function() {
-            if (confirm('Delete this image?')) {
-                container.remove();
-                // Remove from localStorage
-                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                const updatedImages = savedImages.filter(url => url !== imageUrl);
-                localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
-            }
-        };
-        
-        container.appendChild(img);
-        container.appendChild(deleteBtn);
-        galleryGrid.appendChild(container);
-    }
 
     // Smooth scrolling for navigation links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
