@@ -4,7 +4,7 @@ let galleryImages = [];
 
 // Get API base URL based on environment
 const apiBaseUrl = window.location.hostname.includes('github.io') 
-    ? 'https://daredevil-9ea7q0hhg-ajr1073s-projects.vercel.app'
+    ? 'https://daredevil-3apgbdnd8-ajr1073s-projects.vercel.app'
     : '';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,14 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch(`${apiBaseUrl}/images`, {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json'
-        }
+            'Accept': 'application/json'
+        },
+        mode: 'cors'
     })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(images => {
             images.forEach(image => addImageToGallery(image.url));
         })
-        .catch(error => console.error('Error loading images:', error));
+        .catch(error => {
+            console.error('Error loading images:', error);
+            // Handle error gracefully - maybe show a message to the user
+        });
 
     imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
@@ -39,11 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const response = await fetch(`${apiBaseUrl}/upload`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    mode: 'cors'
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Upload failed: ${await response.text()}`);
+                    const errorText = await response.text();
+                    throw new Error(`Upload failed: ${errorText}`);
                 }
 
                 const data = await response.json();
