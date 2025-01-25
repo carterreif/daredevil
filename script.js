@@ -5,49 +5,61 @@ let galleryImages = [];
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
     
-    // Simple image display
+    // Load existing images
+    fetch('https://api.imgbb.com/1/upload')
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(image => addImageToGallery(image.url));
+        })
+        .catch(error => console.error('Error loading images:', error));
+
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
 
-    imageInput.addEventListener('change', function(event) {
+    imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                // Create container for image and delete button
-                const container = document.createElement('div');
-                container.className = 'gallery-item';
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('key', '2c3bc3298d06482b86d0bcf4aff3c1fc'); // Free ImgBB API key
+
+            try {
+                const response = await fetch('https://api.imgbb.com/1/upload', {
+                    method: 'POST',
+                    body: formData
+                });
                 
-                // Create image
-                const image = document.createElement('img');
-                image.src = e.target.result;
-                image.style.maxWidth = '300px';
-                image.style.margin = '10px';
-                image.style.border = '3px solid #ff3333';
-                image.style.borderRadius = '10px';
-                
-                // Create delete button
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'delete-btn';
-                deleteBtn.innerHTML = '×';
-                deleteBtn.onclick = function() {
-                    if (confirm('Delete this image?')) {
-                        container.remove();
-                    }
-                };
-                
-                // Add image and button to container
-                container.appendChild(image);
-                container.appendChild(deleteBtn);
-                
-                // Add container to gallery
-                galleryGrid.appendChild(container);
-            };
-            
-            reader.readAsDataURL(file);
+                const data = await response.json();
+                if (data.data && data.data.url) {
+                    addImageToGallery(data.data.url);
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                alert('Failed to upload image. Please try again.');
+            }
         }
     });
+
+    function addImageToGallery(imageUrl) {
+        const container = document.createElement('div');
+        container.className = 'gallery-item';
+        
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.innerHTML = '×';
+        deleteBtn.onclick = function() {
+            if (confirm('Delete this image?')) {
+                container.remove();
+            }
+        };
+        
+        container.appendChild(img);
+        container.appendChild(deleteBtn);
+        galleryGrid.appendChild(container);
+    }
 
     // Smooth scrolling for navigation links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
