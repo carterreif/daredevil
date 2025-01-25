@@ -7,8 +7,8 @@ const app = express();
 // Enable CORS
 app.use(cors());
 
-// Serve static files
-app.use(express.static('public'));
+// Serve static files from root directory
+app.use(express.static(__dirname));
 app.use('/uploads', express.static('uploads'));
 
 // Configure multer for file uploads
@@ -51,7 +51,7 @@ app.get('/images', (req, res) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });

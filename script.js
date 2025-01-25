@@ -7,27 +7,33 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const FILESTACK_API_KEY = 'AYoYwFzURQKOrLm5nXRQEz';
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
     savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
+
+    // Load existing images
+    fetch('/images')
+        .then(response => response.json())
+        .then(images => {
+            images.forEach(image => addImageToGallery(image.url));
+        })
+        .catch(error => console.error('Error loading images:', error));
 
     imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
         if (file) {
             try {
                 const formData = new FormData();
-                formData.append('fileUpload', file);
+                formData.append('image', file);
 
-                const response = await fetch(`https://www.filestackapi.com/api/store/S3?key=${FILESTACK_API_KEY}`, {
+                const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(`Upload failed: ${errorData}`);
+                    throw new Error(`Upload failed: ${await response.text()}`);
                 }
 
                 const data = await response.json();
