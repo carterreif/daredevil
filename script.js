@@ -1,131 +1,140 @@
 // Store uploaded images in memory
 let galleryImages = [];
 
+// Debug logging
+function debug(message, data = null) {
+    const debugEl = document.getElementById('debug');
+    const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+    const text = data ? `${timestamp} ${message}: ${JSON.stringify(data)}` : `${timestamp} ${message}`;
+    debugEl.innerHTML = `${text}\n${debugEl.innerHTML}`;
+    console.log(message, data);
+}
+
 // Get API base URL based on environment
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const apiBaseUrl = isLocalhost 
     ? 'http://localhost:3000'  // Local development
     : 'https://daredevil-13o4hfb4p-ajr1073s-projects.vercel.app'; // Production
 
+debug('API Base URL:', apiBaseUrl);
+
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded');
+    debug('DOM Content Loaded');
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
+    const uploadStatus = document.getElementById('uploadStatus');
 
-    // Create status element
-    const uploadStatus = document.createElement('div');
-    uploadStatus.id = 'uploadStatus';
-    document.body.appendChild(uploadStatus);
+    if (!imageInput || !galleryGrid || !uploadStatus) {
+        debug('Error: Required elements not found', { imageInput: !!imageInput, galleryGrid: !!galleryGrid, uploadStatus: !!uploadStatus });
+        return;
+    }
 
-    // Load existing images from localStorage
-    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-    savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
-
-    // Load existing images
+    // Load existing images from server
     loadImages();
 
     // Handle image upload
     imageInput.addEventListener('change', handleImageUpload);
 
     async function loadImages() {
+        debug('Loading images...');
         showStatus('Loading images...', 'info');
         try {
-            const response = await fetch(`${apiBaseUrl}/images`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                },
-                mode: 'cors'
-            });
-
+            const response = await fetch(`${apiBaseUrl}/images`);
+            debug('Load images response:', { status: response.status, ok: response.ok });
+            
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to load images: ${errorText}`);
+                throw new Error('Failed to load images');
             }
 
-            const images = await response.json();
-            if (images.length === 0) {
-                showStatus('No images uploaded yet', 'info');
-            } else {
-                images.forEach(image => addImageToGallery(image.url));
-                showStatus('Images loaded successfully', 'success');
+            const data = await response.json();
+            debug('Loaded images:', data);
+            
+            galleryGrid.innerHTML = ''; // Clear existing images
+            if (data && Array.isArray(data)) {
+                data.forEach(image => {
+                    if (image && image.url) {
+                        addImageToGallery(image.url);
+                    }
+                });
+                if (data.length === 0) {
+                    showStatus('No images uploaded yet', 'info');
+                } else {
+                    showStatus('Images loaded successfully', 'success');
+                }
             }
         } catch (error) {
-            console.error('Error loading images:', error);
-            showStatus('Failed to load images. Please refresh the page.', 'error');
+            debug('Error loading images:', error.message);
+            showStatus('Failed to load images', 'error');
         }
     }
 
     async function handleImageUpload(event) {
         const file = event.target.files[0];
-        if (file) {
-            try {
-                // Validate file type
-                if (!file.type.startsWith('image/')) {
-                    showStatus('Please select an image file', 'error');
-                    return;
-                }
+        if (!file) {
+            debug('No file selected');
+            return;
+        }
 
-                // Check file size (limit to 2MB to be safe with localStorage)
-                if (file.size > 2 * 1024 * 1024) {
-                    showStatus('Image must be less than 2MB', 'error');
-                    return;
-                }
+        debug('File selected:', { name: file.name, type: file.type, size: file.size });
 
-                showStatus('Processing image...', 'info');
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            debug('Invalid file type:', file.type);
+            showStatus('Please select an image file', 'error');
+            return;
+        }
+
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            debug('File too large:', file.size);
+            showStatus('Image must be less than 5MB', 'error');
+            return;
+        }
+
+        showStatus('Uploading image...', 'info');
+
+        const formData = new FormData();
+        formData.append('image', file);
 
         try {
-            const formData = new FormData();
-            formData.append('image', file);
-
+            debug('Uploading to:', `${apiBaseUrl}/upload`);
             const response = await fetch(`${apiBaseUrl}/upload`, {
                 method: 'POST',
-                body: formData,
-                mode: 'cors'
+                body: formData
             });
 
+            debug('Upload response:', { status: response.status, ok: response.ok });
+
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Upload failed: ${errorText}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Upload failed');
             }
 
             const data = await response.json();
+            debug('Upload successful:', data);
+
             if (data.url) {
                 addImageToGallery(data.url);
-                
-                // Save to localStorage
-                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                savedImages.push(data.url);
-                localStorage.setItem('galleryImages', JSON.stringify(savedImages));
-
                 showStatus('Image uploaded successfully!', 'success');
-                imageInput.value = '';
+                imageInput.value = ''; // Clear the input
             } else {
                 throw new Error('No image URL in response');
             }
         } catch (error) {
-            console.error('Error uploading image:', error);
-            showStatus('Failed to upload image. Please try again.', 'error');
+            debug('Error uploading image:', error.message);
+            showStatus(`Upload failed: ${error.message}`, 'error');
         }
     }
 
-    // Helper function to convert File to base64
-    function toBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
-
-    function addImageToGallery(imageData) {
+    function addImageToGallery(imageUrl) {
+        debug('Adding image to gallery:', imageUrl);
+        
         const container = document.createElement('div');
         container.className = 'gallery-item';
         
         const img = document.createElement('img');
-        img.src = imageData;
+        img.src = imageUrl;
         img.alt = 'Gallery Image';
         img.loading = 'lazy';
         
@@ -134,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.onload = () => {
             img.style.transition = 'opacity 0.3s ease-in';
             img.style.opacity = '1';
+            debug('Image loaded:', imageUrl);
         };
 
         // Add storage location indicator
@@ -156,10 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBtn.onclick = function() {
             if (confirm('Delete this image?')) {
                 container.remove();
-                // Remove from localStorage
-                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                const updatedImages = savedImages.filter(url => url !== imageUrl);
-                localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
+                debug('Image deleted:', imageUrl);
             }
         };
         
@@ -170,15 +177,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showStatus(message, type) {
+        debug('Status:', { message, type });
         uploadStatus.textContent = message;
         uploadStatus.className = `status ${type}`;
         uploadStatus.style.display = 'block';
         
-        if (type === 'success' || type === 'error') {
-            setTimeout(() => {
-                uploadStatus.style.display = 'none';
-            }, 3000);
-        }
+        // Hide status after 3 seconds
+        setTimeout(() => {
+            uploadStatus.style.display = 'none';
+        }, 3000);
     }
 
     // Smooth scrolling for navigation links
