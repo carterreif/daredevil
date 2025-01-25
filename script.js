@@ -2,7 +2,10 @@
 let galleryImages = [];
 
 // Get API base URL based on environment
-const apiBaseUrl = 'https://daredevil-5tvgwdbas-ajr1073s-projects.vercel.app';
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const apiBaseUrl = isLocalhost 
+    ? 'http://localhost:3000'  // Local development
+    : 'https://daredevil-13o4hfb4p-ajr1073s-projects.vercel.app'; // Production
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
