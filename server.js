@@ -9,7 +9,12 @@ app.use(cors());
 
 // Serve static files from root directory
 app.use(express.static(__dirname));
-app.use('/uploads', express.static('uploads'));
+
+// Configure GitHub Pages base path
+const basePath = process.env.NODE_ENV === 'production' ? '/daredevil' : '';
+
+// Serve uploads directory
+app.use(`${basePath}/uploads`, express.static('uploads'));
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -30,25 +35,30 @@ if (!fs.existsSync('uploads')) {
 }
 
 // API endpoints
-app.post('/upload', upload.single('image'), (req, res) => {
+app.post(`${basePath}/upload`, upload.single('image'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
     res.json({
-        url: `/uploads/${req.file.filename}`
+        url: `${basePath}/uploads/${req.file.filename}`
     });
 });
 
-app.get('/images', (req, res) => {
+app.get(`${basePath}/images`, (req, res) => {
     fs.readdir('uploads', (err, files) => {
         if (err) {
             return res.status(500).send('Error reading uploads directory');
         }
         const images = files.map(file => ({
-            url: `/uploads/${file}`
+            url: `${basePath}/uploads/${file}`
         }));
         res.json(images);
     });
+});
+
+// Handle GitHub Pages routing
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const port = process.env.PORT || 3000;
