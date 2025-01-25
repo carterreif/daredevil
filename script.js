@@ -2,15 +2,11 @@
 let uploadedImages = JSON.parse(localStorage.getItem('daredevilGallery')) || [];
 let galleryImages = [];
 
-// Get API base URL based on environment
-const apiBaseUrl = 'https://daredevil-5tvgwdbas-ajr1073s-projects.vercel.app';
-
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const FILESTACK_API_KEY = 'AYoYwFzURQKOrLm5nXRQEz';
 
     // Create status element
     const uploadStatus = document.createElement('div');
@@ -21,10 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
     savedImages.forEach(imageData => addImageToGallery(imageData));
 
-    // Load existing images
-    loadImages();
-
-    // Handle image upload
     imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
         if (file) {
@@ -63,35 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
-    async function loadImages() {
-        showStatus('Loading images...', 'info');
-        try {
-            const response = await fetch(`${apiBaseUrl}/images`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                },
-                mode: 'cors'
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to load images: ${errorText}`);
-            }
-
-            const images = await response.json();
-            if (images.length === 0) {
-                showStatus('No images uploaded yet', 'info');
-            } else {
-                images.forEach(image => addImageToGallery(image.url));
-                showStatus('Images loaded successfully', 'success');
-            }
-        } catch (error) {
-            console.error('Error loading images:', error);
-            showStatus('Failed to load images. Please refresh the page.', 'error');
-        }
-    }
 
     // Helper function to convert File to base64
     function toBase64(file) {
