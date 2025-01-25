@@ -1,37 +1,52 @@
-# Daredevil Fan Site
+# Daredevil Fan Gallery
 
-A fan site for Daredevil with an interactive image gallery.
+A browser-based fan gallery for sharing Daredevil images. Built with modern web technologies and designed for simplicity and performance.
 
-## Local Development
+## Features
 
-1. Install dependencies:
-```bash
-npm install
-```
+- Clean, responsive image gallery
+- Mobile-friendly design
+- Browser-based storage (works offline!)
+- Automatic image resizing and optimization
+- Easy image management with delete functionality
+- Image details on hover (name, size, date)
+- Fast loading with lazy image loading
 
-2. Start the local server:
-```bash
-npm start
-```
+## Technology
 
-3. Visit `http://localhost:8080` in your browser
+- Pure JavaScript (no frameworks needed)
+- CSS Grid for responsive layout
+- Browser's localStorage for data persistence
+- Modern Web APIs
 
-## Deployment Options
+## Usage
 
-### Option 1: GitHub Pages (Free)
-1. Create a GitHub repository
-2. Push this code to the repository
-3. Enable GitHub Pages in the repository settings
-4. Your site will be live at `https://[username].github.io/[repository-name]`
+1. Open `index.html` in your web browser
+2. Click "Upload Image" to add images to your gallery
+3. Hover over images to see details
+4. Click the × button to delete images
 
-### Option 2: Netlify (Free)
-1. Sign up for a Netlify account
-2. Connect your GitHub repository
-3. Deploy from Netlify dashboard
-4. Your site will get a custom URL like `https://your-site-name.netlify.app`
+## Privacy
 
-### Option 3: Vercel (Free)
-1. Sign up for a Vercel account
-2. Connect your GitHub repository
-3. Deploy from Vercel dashboard
-4. Your site will get a custom URL like `https://your-site-name.vercel.app`
+All images are stored locally in your browser's storage. They are:
+- Not uploaded to any server
+- Not shared with other users
+- Persisted between browser sessions
+- Cleared when you clear your browser data
+
+## Development
+
+To run locally:
+1. Clone this repository
+2. Open `index.html` in your browser
+3. Start adding images!
+
+## Contributing
+
+Feel free to open issues or submit pull requests. All contributions are welcome!
+
+## License
+
+This project is open source under the MIT License. See LICENSE file for details.
+
+Note: All Daredevil characters and images are property of Marvel Entertainment, LLC.

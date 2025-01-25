@@ -1,11 +1,16 @@
-// Store uploaded images in memory
-let galleryImages = [];
+// Store uploaded images in localStorage
+const STORAGE_KEY = 'daredevil-gallery-images';
 
-// Get API base URL based on environment
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const apiBaseUrl = isLocalhost 
-    ? 'http://localhost:3000'  // Local development
-    : 'https://daredevil-13o4hfb4p-ajr1073s-projects.vercel.app'; // Production
+// Load images from localStorage
+function loadStoredImages() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+}
+
+// Save images to localStorage
+function saveImages(images) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const imageInput = document.getElementById('imageInput');
@@ -17,35 +22,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Load existing images from server
+    // Load existing images
     loadImages();
 
     // Handle image upload
     imageInput.addEventListener('change', handleImageUpload);
 
-    async function loadImages() {
+    function loadImages() {
         showStatus('Loading images...', 'info');
         try {
-            const response = await fetch(`${apiBaseUrl}/images`);
-            
-            if (!response.ok) {
-                throw new Error('Failed to load images');
-            }
-
-            const data = await response.json();
-            
+            const images = loadStoredImages();
             galleryGrid.innerHTML = ''; // Clear existing images
-            if (data && Array.isArray(data)) {
-                data.forEach(image => {
-                    if (image && image.url) {
-                        addImageToGallery(image.url);
-                    }
+            
+            if (images.length === 0) {
+                showStatus('No images uploaded yet', 'info');
+            } else {
+                images.forEach(imageData => {
+                    addImageToGallery(imageData);
                 });
-                if (data.length === 0) {
-                    showStatus('No images uploaded yet', 'info');
-                } else {
-                    showStatus('Images loaded successfully', 'success');
-                }
+                showStatus('Images loaded successfully', 'success');
             }
         } catch (error) {
             console.error('Error loading images:', error);
@@ -53,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function handleImageUpload(event) {
+    function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) {
             return;
@@ -71,44 +66,51 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        showStatus('Uploading image...', 'info');
+        showStatus('Processing image...', 'info');
 
-        try {
-            const formData = new FormData();
-            formData.append('image', file);
+        // Read file as Data URL
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imageData = {
+                    url: e.target.result,
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    uploadedAt: new Date().toISOString()
+                };
 
-            const response = await fetch(`${apiBaseUrl}/upload`, {
-                method: 'POST',
-                body: formData
-            });
+                // Add to gallery
+                addImageToGallery(imageData);
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
-                throw new Error(errorData.error || 'Upload failed');
-            }
+                // Save to localStorage
+                const images = loadStoredImages();
+                images.push(imageData);
+                saveImages(images);
 
-            const data = await response.json();
-
-            if (data.url) {
-                addImageToGallery(data.url);
                 showStatus('Image uploaded successfully!', 'success');
                 imageInput.value = ''; // Clear the input
-            } else {
-                throw new Error('No image URL in response');
+            } catch (error) {
+                console.error('Error processing image:', error);
+                showStatus('Failed to process image', 'error');
             }
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            showStatus(`Upload failed: ${error.message}`, 'error');
-        }
+        };
+
+        reader.onerror = () => {
+            console.error('Error reading file');
+            showStatus('Failed to read image file', 'error');
+        };
+
+        reader.readAsDataURL(file);
     }
 
-    function addImageToGallery(imageUrl) {
+    function addImageToGallery(imageData) {
         const container = document.createElement('div');
         container.className = 'gallery-item';
         
         const img = document.createElement('img');
-        img.src = imageUrl;
-        img.alt = 'Gallery Image';
+        img.src = imageData.url;
+        img.alt = imageData.name || 'Gallery Image';
         img.loading = 'lazy';
         
         // Add loading indicator
@@ -118,33 +120,54 @@ document.addEventListener('DOMContentLoaded', () => {
             img.style.opacity = '1';
         };
 
-        // Add storage location indicator
-        const storageIndicator = document.createElement('div');
-        storageIndicator.className = 'storage-indicator';
-        if (imageUrl.includes('res.cloudinary.com')) {
-            storageIndicator.textContent = '☁️ Cloud';
-            storageIndicator.title = 'Stored on Cloudinary';
-        } else if (imageUrl.startsWith('data:')) {
-            storageIndicator.textContent = '💻 Local';
-            storageIndicator.title = 'Stored locally';
-        } else {
-            storageIndicator.textContent = '❓ Unknown';
-            storageIndicator.title = 'Unknown storage location';
-        }
+        // Add image info
+        const infoContainer = document.createElement('div');
+        infoContainer.className = 'image-info';
         
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'image-name';
+        nameSpan.textContent = imageData.name;
+        
+        const sizeSpan = document.createElement('span');
+        sizeSpan.className = 'image-size';
+        sizeSpan.textContent = formatSize(imageData.size);
+        
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'image-date';
+        dateSpan.textContent = new Date(imageData.uploadedAt).toLocaleDateString();
+        
+        infoContainer.appendChild(nameSpan);
+        infoContainer.appendChild(sizeSpan);
+        infoContainer.appendChild(dateSpan);
+        
+        // Add delete button
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.innerHTML = '×';
         deleteBtn.onclick = function() {
             if (confirm('Delete this image?')) {
+                // Remove from DOM
                 container.remove();
+                
+                // Remove from localStorage
+                const images = loadStoredImages();
+                const updatedImages = images.filter(img => img.url !== imageData.url);
+                saveImages(updatedImages);
+                
+                showStatus('Image deleted', 'info');
             }
         };
         
         container.appendChild(img);
-        container.appendChild(storageIndicator);
+        container.appendChild(infoContainer);
         container.appendChild(deleteBtn);
         galleryGrid.appendChild(container);
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
     function showStatus(message, type) {
