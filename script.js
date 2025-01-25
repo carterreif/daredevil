@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const IMGBB_API_KEY = '9dd32b1b4cdd11d3d9d9d5eeae6d41d1';  // New API key
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
@@ -19,14 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // Convert image file to base64
                 const base64Image = await toBase64(file);
-                const base64Data = base64Image.split(',')[1];
 
-                // Create form data with base64 image
+                // Create form data
                 const formData = new FormData();
-                formData.append('key', IMGBB_API_KEY);
-                formData.append('image', base64Data);
+                formData.append('source', base64Image);
+                formData.append('type', 'file');
+                formData.append('action', 'upload');
+                formData.append('timestamp', Math.round(new Date().getTime() / 1000));
+                formData.append('auth_token', '');
 
-                const response = await fetch('https://api.imgbb.com/1/upload', {
+                const response = await fetch('https://freeimage.host/api/1/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -37,8 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const data = await response.json();
-                if (data.data && data.data.url) {
-                    const imageUrl = data.data.url;
+                if (data.status_code === 200 && data.image && data.image.url) {
+                    const imageUrl = data.image.url;
                     addImageToGallery(imageUrl);
                     
                     // Save to localStorage
