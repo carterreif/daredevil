@@ -1089,14 +1089,17 @@ section h2 {
 .protector-image {
     flex: 1;
     text-align: center;
+    max-width: 500px;
 }
 
 .protector-image img {
-    max-width: 100%;
+    width: 100%;
     height: auto;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(255, 25, 25, 0.3);
     transition: transform 0.3s ease;
+    object-fit: cover;
+    aspect-ratio: 16/9;
 }
 
 .protector-image img:hover {
@@ -1115,5 +1118,6 @@ section h2 {
 
     .protector-image {
         order: 1;
+        max-width: 100%;
     }
 }
