@@ -1060,3 +1060,60 @@ section h2 {
         0 0 20px #808080,
         0 0 40px #606060;
 }
+
+/* Protector Section */
+.protector-section {
+    background-color: #1a1a1a;
+    padding: 80px 0;
+}
+
+.protector-content {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    margin-top: 30px;
+}
+
+.protector-text {
+    flex: 1;
+}
+
+.protector-text p {
+    color: #ffffff;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.protector-image {
+    flex: 1;
+    text-align: center;
+}
+
+.protector-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(255, 25, 25, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.protector-image img:hover {
+    transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+    .protector-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .protector-text {
+        order: 2;
+    }
+
+    .protector-image {
+        order: 1;
+    }
+}
