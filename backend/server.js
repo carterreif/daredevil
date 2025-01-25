@@ -13,9 +13,9 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// CORS configuration
+// CORS configuration for testing
 const corsOptions = {
-    origin: 'https://carterreif.github.io',
+    origin: ['https://carterreif.github.io', 'http://localhost:3000', 'http://127.0.0.1:5500'],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['X-CSRF-Token', 'X-Requested-With', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Content-Type', 'Date', 'X-Api-Version'],
     credentials: false,

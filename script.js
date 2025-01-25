@@ -3,7 +3,12 @@ let uploadedImages = JSON.parse(localStorage.getItem('daredevilGallery')) || [];
 let galleryImages = [];
 
 // Get API base URL based on environment
-const apiBaseUrl = 'https://daredevil-5tvgwdbas-ajr1073s-projects.vercel.app';
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const apiBaseUrl = isLocalhost 
+    ? 'http://localhost:3000'  // Local development
+    : window.location.hostname.includes('test') 
+        ? 'https://daredevil-test.vercel.app'  // Test environment
+        : 'https://daredevil-5tvgwdbas-ajr1073s-projects.vercel.app'; // Production
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
