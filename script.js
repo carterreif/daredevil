@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const IMGBB_API_KEY = '9dd32b1b4cdd11d3d9d9d5eeae6d41d1'; // ImgBB API key
+    const IMGBB_API_KEY = 'c64c5b70d73c91ef2049252f2d3c9c86'; // New ImgBB API key
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
@@ -17,10 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = event.target.files[0];
         if (file) {
             try {
-                // Convert file to base64
-                const base64data = await toBase64(file);
                 const formData = new FormData();
-                formData.append('image', base64data.split(',')[1]);
+                formData.append('image', file);
                 formData.append('key', IMGBB_API_KEY);
 
                 const response = await fetch('https://api.imgbb.com/1/upload', {
@@ -46,16 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
-    // Helper function to convert File to base64
-    function toBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
 
     function addImageToGallery(imageUrl) {
         const container = document.createElement('div');
