@@ -14,7 +14,7 @@ function debug(message, data = null) {
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const apiBaseUrl = isLocalhost 
     ? 'http://localhost:3000'  // Local development
-    : 'https://daredevil-d1cm9vssy-ajr1073s-projects.vercel.app'; // Production
+    : 'https://daredevil-i5vqoeh75-ajr1073s-projects.vercel.app'; // Production
 
 debug('API Base URL:', apiBaseUrl);
 
