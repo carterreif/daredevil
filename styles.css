@@ -39,44 +39,60 @@ nav {
 }
 
 .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 2rem;
+    padding: 0 20px;
+    position: relative;
 }
 
-.nav-links {
-    display: flex;
-    gap: 2rem;
-    list-style: none;
+.logo {
+    padding: 10px 0;
 }
 
-.nav-links a {
-    color: #ffffff;
-    text-decoration: none;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: color 0.3s ease;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.nav-links a:hover {
-    color: var(--accent-red);
-    text-shadow: 0 0 10px rgba(255, 25, 25, 0.5);
-}
-
-/* Mobile Menu Styles */
 .nav-menu {
     display: flex;
     list-style: none;
     margin: 0;
     padding: 0;
+    align-items: center;
+}
+
+.nav-menu a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 15px;
+    transition: color 0.3s;
+}
+
+.nav-menu a:hover {
+    color: #ff1919;
+    text-shadow: 0 0 10px rgba(255, 25, 25, 0.5);
+}
+
+/* Mobile Menu Styles */
+.hamburger {
+    display: none;
+    cursor: pointer;
+    padding: 10px;
+    z-index: 1001;
+    position: relative;
+}
+
+.hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background-color: white;
+    margin: 4px 0;
+    transition: 0.3s;
 }
 
 @media (max-width: 768px) {
+    .hamburger {
+        display: block;
+    }
+
     .nav-menu {
         display: none;
         position: absolute;
@@ -122,23 +138,6 @@ nav {
     .nav-menu a:hover {
         background-color: rgba(255, 255, 255, 0.1);
         padding-left: 20px;
-    }
-
-    .hamburger {
-        display: block;
-        cursor: pointer;
-        padding: 10px;
-        z-index: 1001;
-        position: relative;
-    }
-
-    .hamburger span {
-        display: block;
-        width: 22px;
-        height: 2px;
-        background-color: white;
-        margin: 4px 0;
-        transition: 0.3s;
     }
 
     .hamburger.active span:nth-child(1) {
