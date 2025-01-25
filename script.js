@@ -2,6 +2,9 @@
 let uploadedImages = JSON.parse(localStorage.getItem('daredevilGallery')) || [];
 let galleryImages = [];
 
+// Get base path for GitHub Pages
+const basePath = window.location.hostname === 'carterreif.github.io' ? '/daredevil' : '';
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
     
@@ -13,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
 
     // Load existing images
-    fetch('/images')
+    fetch(`${basePath}/images`)
         .then(response => response.json())
         .then(images => {
             images.forEach(image => addImageToGallery(image.url));
@@ -27,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formData = new FormData();
                 formData.append('image', file);
 
-                const response = await fetch('/upload', {
+                const response = await fetch(`${basePath}/upload`, {
                     method: 'POST',
                     body: formData
                 });
