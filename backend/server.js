@@ -15,10 +15,11 @@ cloudinary.config({
 
 // CORS configuration
 const corsOptions = {
-    origin: 'https://carterreif.github.io',
+    origin: ['https://carterreif.github.io', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
-    credentials: false
+    credentials: false,
+    optionsSuccessStatus: 200
 };
 
 // Enable CORS
