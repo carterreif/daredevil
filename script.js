@@ -3,7 +3,7 @@ let uploadedImages = JSON.parse(localStorage.getItem('daredevilGallery')) || [];
 let galleryImages = [];
 
 // Get API base URL based on environment
-const apiBaseUrl = 'https://daredevil-1tlgqed6d-ajr1073s-projects.vercel.app';
+const apiBaseUrl = 'https://daredevil-zacjn4ufs-ajr1073s-projects.vercel.app';
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
