@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const IMGUR_CLIENT_ID = '3fa71d3e01e7d0b'; // Public Imgur API client ID
+    const FILESTACK_API_KEY = 'AYoYwFzURQKOrLm5nXRQEz'; // Public API key
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
@@ -18,19 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file) {
             try {
                 const formData = new FormData();
-                formData.append('image', file);
+                formData.append('fileUpload', file);
 
-                const response = await fetch('https://api.imgur.com/3/image', {
+                const response = await fetch(`https://www.filestackapi.com/api/store/S3?key=${FILESTACK_API_KEY}`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`
-                    },
                     body: formData
                 });
 
                 const data = await response.json();
-                if (data.success) {
-                    const imageUrl = data.data.link;
+                if (data.url) {
+                    const imageUrl = data.url;
                     addImageToGallery(imageUrl);
                     
                     // Save to localStorage
@@ -38,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     savedImages.push(imageUrl);
                     localStorage.setItem('galleryImages', JSON.stringify(savedImages));
                 } else {
-                    throw new Error('Failed to upload to Imgur');
+                    throw new Error('Failed to upload image');
                 }
             } catch (error) {
                 console.error('Error uploading image:', error);
@@ -54,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = 'Gallery Image';
+        img.loading = 'lazy'; // Add lazy loading
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
