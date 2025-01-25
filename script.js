@@ -7,57 +7,56 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const FILESTACK_API_KEY = 'AYoYwFzURQKOrLm5nXRQEz';
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-    savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
+    savedImages.forEach(imageData => addImageToGallery(imageData));
 
     imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
         if (file) {
             try {
-                const formData = new FormData();
-                formData.append('fileUpload', file);
-
-                const response = await fetch(`https://www.filestackapi.com/api/store/S3?key=${FILESTACK_API_KEY}`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(`Upload failed: ${errorData}`);
+                // Check file size (limit to 2MB to be safe with localStorage)
+                if (file.size > 2 * 1024 * 1024) {
+                    throw new Error('Image too large. Please choose an image under 2MB.');
                 }
 
-                const data = await response.json();
-                if (data.url) {
-                    const imageUrl = data.url;
-                    addImageToGallery(imageUrl);
-                    
-                    // Save to localStorage
-                    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                    savedImages.push(imageUrl);
-                    localStorage.setItem('galleryImages', JSON.stringify(savedImages));
+                // Convert to base64
+                const base64Image = await toBase64(file);
+                
+                // Add to gallery
+                addImageToGallery(base64Image);
+                
+                // Save to localStorage
+                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                savedImages.push(base64Image);
+                localStorage.setItem('galleryImages', JSON.stringify(savedImages));
 
-                    // Clear the input
-                    imageInput.value = '';
-                } else {
-                    throw new Error('Failed to get image URL from response');
-                }
+                // Clear the input
+                imageInput.value = '';
             } catch (error) {
-                console.error('Error uploading image:', error);
-                alert('Failed to upload image. Please try again.');
+                console.error('Error handling image:', error);
+                alert(error.message || 'Failed to process image. Please try again.');
             }
         }
     });
 
-    function addImageToGallery(imageUrl) {
+    // Helper function to convert File to base64
+    function toBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    function addImageToGallery(imageData) {
         const container = document.createElement('div');
         container.className = 'gallery-item';
         
         const img = document.createElement('img');
-        img.src = imageUrl;
+        img.src = imageData;
         img.alt = 'Gallery Image';
         img.loading = 'lazy';
         
@@ -69,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.remove();
                 // Remove from localStorage
                 const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                const updatedImages = savedImages.filter(url => url !== imageUrl);
+                const updatedImages = savedImages.filter(data => data !== imageData);
                 localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
             }
         };
