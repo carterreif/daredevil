@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
@@ -7,24 +8,24 @@ const app = express();
 
 // Configure Cloudinary
 cloudinary.config({
-    cloud_name: 'daredevil-fan',
-    api_key: '671257837722363',
-    api_secret: 'YOUR_API_SECRET'
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// CORS configuration
+const corsOptions = {
+    origin: 'https://carterreif.github.io',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+    credentials: false
+};
+
 // Enable CORS
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    // Handle preflight
-    if (req.method === 'OPTIONS') {
-        console.log('Handling OPTIONS request');
-        return res.status(200).end();
-    }
-    next();
-});
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     imageInput.addEventListener('change', handleImageUpload);
 
     async function loadImages() {
+        showStatus('Loading images...', 'info');
         try {
             const response = await fetch(`${apiBaseUrl}/images`, {
                 method: 'GET',
@@ -35,11 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`Failed to load images: ${errorText}`);
             }
 
             const images = await response.json();
-            images.forEach(image => addImageToGallery(image.url));
+            if (images.length === 0) {
+                showStatus('No images uploaded yet', 'info');
+            } else {
+                images.forEach(image => addImageToGallery(image.url));
+                showStatus('Images loaded successfully', 'success');
+            }
         } catch (error) {
             console.error('Error loading images:', error);
             showStatus('Failed to load images. Please refresh the page.', 'error');
@@ -49,6 +56,18 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            showStatus('Please select an image file', 'error');
+            return;
+        }
+
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            showStatus('Image must be less than 5MB', 'error');
+            return;
+        }
 
         showStatus('Uploading image...', 'info');
 
@@ -63,7 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                throw new Error(`Upload failed: ${await response.text()}`);
+                const errorText = await response.text();
+                throw new Error(`Upload failed: ${errorText}`);
             }
 
             const data = await response.json();
@@ -95,6 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
         img.alt = 'Gallery Image';
         img.loading = 'lazy';
         
+        // Add loading indicator
+        img.style.opacity = '0';
+        img.onload = () => {
+            img.style.transition = 'opacity 0.3s ease-in';
+            img.style.opacity = '1';
+        };
+        
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.innerHTML = '×';
@@ -115,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showStatus(message, type) {
         uploadStatus.textContent = message;
-        uploadStatus.className = type;
+        uploadStatus.className = `status ${type}`;
         uploadStatus.style.display = 'block';
         
         if (type === 'success' || type === 'error') {
