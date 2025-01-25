@@ -1,0 +1,11 @@
+{
+  "name": "daredevil-fan-site",
+  "version": "1.0.0",
+  "description": "A Daredevil fan site with image gallery",
+  "scripts": {
+    "start": "npx http-server public -p 8080"
+  },
+  "dependencies": {
+    "http-server": "^14.1.1"
+  }
+}
