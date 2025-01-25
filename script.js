@@ -4,7 +4,7 @@ let galleryImages = [];
 
 // Get API base URL based on environment
 const apiBaseUrl = window.location.hostname.includes('github.io') 
-    ? 'https://daredevil-bitoio76u-ajr1073s-projects.vercel.app'
+    ? 'https://daredevil-9ea7q0hhg-ajr1073s-projects.vercel.app'
     : '';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -18,7 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
 
     // Load existing images
-    fetch(`${apiBaseUrl}/images`)
+    fetch(`${apiBaseUrl}/images`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
         .then(response => response.json())
         .then(images => {
             images.forEach(image => addImageToGallery(image.url));
