@@ -7,54 +7,34 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const IMGUR_CLIENT_ID = '0e1df61d873e129';  // Public client ID for Imgur API
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-    savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
+    savedImages.forEach(imageData => addImageToGallery(imageData));
 
     imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
         if (file) {
             try {
+                // Check file size (limit to 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    throw new Error('Image too large. Please choose an image under 5MB.');
+                }
+
+                // Convert to base64
                 const base64Image = await toBase64(file);
-                const base64Data = base64Image.split(',')[1];
+                addImageToGallery(base64Image);
+                
+                // Save to localStorage
+                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                savedImages.push(base64Image);
+                localStorage.setItem('galleryImages', JSON.stringify(savedImages));
 
-                const response = await fetch('https://api.imgur.com/3/image', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        image: base64Data,
-                        type: 'base64'
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
-                }
-
-                const data = await response.json();
-                if (data.success && data.data.link) {
-                    const imageUrl = data.data.link;
-                    addImageToGallery(imageUrl);
-                    
-                    // Save to localStorage
-                    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                    savedImages.push(imageUrl);
-                    localStorage.setItem('galleryImages', JSON.stringify(savedImages));
-
-                    // Clear the input
-                    imageInput.value = '';
-                } else {
-                    throw new Error('Failed to get image URL from response');
-                }
+                // Clear the input
+                imageInput.value = '';
             } catch (error) {
-                console.error('Error uploading image:', error);
-                alert('Failed to upload image. Please try again.');
+                console.error('Error handling image:', error);
+                alert(error.message || 'Failed to process image. Please try again.');
             }
         }
     });
@@ -69,12 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function addImageToGallery(imageUrl) {
+    function addImageToGallery(imageData) {
         const container = document.createElement('div');
         container.className = 'gallery-item';
         
         const img = document.createElement('img');
-        img.src = imageUrl;
+        img.src = imageData;
         img.alt = 'Gallery Image';
         img.loading = 'lazy';
         
@@ -86,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.remove();
                 // Remove from localStorage
                 const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                const updatedImages = savedImages.filter(url => url !== imageUrl);
+                const updatedImages = savedImages.filter(data => data !== imageData);
                 localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
             }
         };
