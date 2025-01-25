@@ -1,32 +1,19 @@
 // Store uploaded images in memory
 let galleryImages = [];
 
-// Debug logging
-function debug(message, data = null) {
-    const debugEl = document.getElementById('debug');
-    const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-    const text = data ? `${timestamp} ${message}: ${JSON.stringify(data)}` : `${timestamp} ${message}`;
-    debugEl.innerHTML = `${text}\n${debugEl.innerHTML}`;
-    console.log(message, data);
-}
-
 // Get API base URL based on environment
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const apiBaseUrl = isLocalhost 
     ? 'http://localhost:3000'  // Local development
-    : 'https://daredevil-i5vqoeh75-ajr1073s-projects.vercel.app'; // Production
-
-debug('API Base URL:', apiBaseUrl);
+    : 'https://daredevil-13o4hfb4p-ajr1073s-projects.vercel.app'; // Production
 
 document.addEventListener('DOMContentLoaded', () => {
-    debug('DOM Content Loaded');
-    
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
     const uploadStatus = document.getElementById('uploadStatus');
 
     if (!imageInput || !galleryGrid || !uploadStatus) {
-        debug('Error: Required elements not found', { imageInput: !!imageInput, galleryGrid: !!galleryGrid, uploadStatus: !!uploadStatus });
+        console.error('Required elements not found');
         return;
     }
 
@@ -37,18 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
     imageInput.addEventListener('change', handleImageUpload);
 
     async function loadImages() {
-        debug('Loading images...');
         showStatus('Loading images...', 'info');
         try {
             const response = await fetch(`${apiBaseUrl}/images`);
-            debug('Load images response:', { status: response.status, ok: response.ok });
             
             if (!response.ok) {
                 throw new Error('Failed to load images');
             }
 
             const data = await response.json();
-            debug('Loaded images:', data);
             
             galleryGrid.innerHTML = ''; // Clear existing images
             if (data && Array.isArray(data)) {
@@ -64,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } catch (error) {
-            debug('Error loading images:', error.message);
+            console.error('Error loading images:', error);
             showStatus('Failed to load images', 'error');
         }
     }
@@ -72,22 +56,17 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleImageUpload(event) {
         const file = event.target.files[0];
         if (!file) {
-            debug('No file selected');
             return;
         }
 
-        debug('File selected:', { name: file.name, type: file.type, size: file.size });
-
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            debug('Invalid file type:', file.type);
             showStatus('Please select an image file', 'error');
             return;
         }
 
         // Validate file size (5MB limit)
         if (file.size > 5 * 1024 * 1024) {
-            debug('File too large:', file.size);
             showStatus('Image must be less than 5MB', 'error');
             return;
         }
@@ -98,13 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('image', file);
 
-            debug('Uploading to:', `${apiBaseUrl}/upload`);
             const response = await fetch(`${apiBaseUrl}/upload`, {
                 method: 'POST',
                 body: formData
             });
-
-            debug('Upload response:', { status: response.status, ok: response.ok });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
@@ -112,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            debug('Upload successful:', data);
 
             if (data.url) {
                 addImageToGallery(data.url);
@@ -122,14 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('No image URL in response');
             }
         } catch (error) {
-            debug('Error uploading image:', error.message);
+            console.error('Error uploading image:', error);
             showStatus(`Upload failed: ${error.message}`, 'error');
         }
     }
 
     function addImageToGallery(imageUrl) {
-        debug('Adding image to gallery:', imageUrl);
-        
         const container = document.createElement('div');
         container.className = 'gallery-item';
         
@@ -143,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         img.onload = () => {
             img.style.transition = 'opacity 0.3s ease-in';
             img.style.opacity = '1';
-            debug('Image loaded:', imageUrl);
         };
 
         // Add storage location indicator
@@ -166,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBtn.onclick = function() {
             if (confirm('Delete this image?')) {
                 container.remove();
-                debug('Image deleted:', imageUrl);
             }
         };
         
@@ -177,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showStatus(message, type) {
-        debug('Status:', { message, type });
         uploadStatus.textContent = message;
         uploadStatus.className = `status ${type}`;
         uploadStatus.style.display = 'block';

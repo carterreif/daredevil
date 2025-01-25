@@ -725,49 +725,28 @@ section h2 {
 
 #uploadStatus {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 25px;
-    border-radius: 5px;
-    z-index: 1000;
-    font-weight: 500;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    transition: opacity 0.3s ease-in-out;
-}
-
-#uploadStatus.success {
-    background: #4CAF50;
-    color: white;
-}
-
-#uploadStatus.error {
-    background: #f44336;
-    color: white;
-}
-
-#uploadStatus.info {
-    background: #2196F3;
-    color: white;
-}
-
-#debug {
-    position: fixed;
     bottom: 20px;
     right: 20px;
-    background: rgba(0,0,0,0.9);
-    color: #00ff00;
-    padding: 15px;
-    border-radius: 8px;
-    font-family: monospace;
-    max-width: 500px;
-    max-height: 300px;
-    overflow-y: auto;
-    word-wrap: break-word;
-    font-size: 12px;
-    line-height: 1.4;
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: none;
     z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    white-space: pre-wrap;
+    font-weight: 500;
+}
+
+.status.success {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status.error {
+    background-color: #f44336;
+    color: white;
+}
+
+.status.info {
+    background-color: #2196F3;
+    color: white;
 }
 
 /* Gallery Grid */
@@ -833,25 +812,26 @@ section h2 {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    padding: 10px 20px;
+    padding: 15px 25px;
     border-radius: 5px;
-    display: none;
     z-index: 1000;
     font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: opacity 0.3s ease-in-out;
 }
 
-.status.success {
-    background-color: #4CAF50;
+#uploadStatus.success {
+    background: #4CAF50;
     color: white;
 }
 
-.status.error {
-    background-color: #f44336;
+#uploadStatus.error {
+    background: #f44336;
     color: white;
 }
 
-.status.info {
-    background-color: #2196F3;
+#uploadStatus.info {
+    background: #2196F3;
     color: white;
 }
 

@@ -21,21 +21,14 @@ console.log('Cloudinary Configuration:', {
 
 cloudinary.config(cloudinaryConfig);
 
-// CORS configuration
-const corsOptions = {
-    origin: '*',
-    methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
-    allowedHeaders: ['X-CSRF-Token', 'X-Requested-With', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Content-Type', 'Date', 'X-Api-Version'],
-    credentials: false,
-    optionsSuccessStatus: 200,
-    maxAge: 86400
-};
+// Enable CORS for all origins in development
+app.use(cors());
 
-// Enable CORS for all routes
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -46,64 +39,72 @@ const upload = multer({
     }
 });
 
-// Store uploaded images in memory
-const uploadedImages = [];
+// Store uploaded image URLs in memory (in production, use a database)
+let uploadedImages = [];
 
-// Health check endpoint
-app.get('/', (req, res) => {
-    res.json({ status: 'ok' });
-});
+// Serve static files from root directory
+app.use(express.static(__dirname));
 
-// Get all images
-app.get('/images', (req, res) => {
-    try {
-        res.json(uploadedImages);
-    } catch (error) {
-        console.error('Error getting images:', error);
-        res.status(500).json({ error: 'Failed to get images' });
-    }
-});
-
-// Upload image endpoint
+// API endpoints
 app.post('/upload', upload.single('image'), async (req, res) => {
+    console.log('Received upload request');
+    
     try {
         if (!req.file) {
-            return res.status(400).json({ error: 'No image file provided' });
+            console.log('No file uploaded');
+            return res.status(400).json({ error: 'No file uploaded' });
         }
+
+        console.log('Processing file:', req.file.originalname);
 
         // Convert buffer to base64
         const base64Image = req.file.buffer.toString('base64');
         const dataURI = `data:${req.file.mimetype};base64,${base64Image}`;
 
         // Upload to Cloudinary
-        const result = await cloudinary.uploader.upload(dataURI, {
-            resource_type: 'auto',
-            folder: 'daredevil'
+        console.log('Uploading to Cloudinary with config:', {
+            cloud_name: cloudinaryConfig.cloud_name,
+            api_key: cloudinaryConfig.api_key ? 'present' : 'missing',
+            api_secret: cloudinaryConfig.api_secret ? 'present' : 'missing'
         });
 
-        // Add to our in-memory storage
-        const imageData = {
+        const result = await cloudinary.uploader.upload(dataURI, {
+            folder: 'daredevil-gallery',
+            resource_type: 'auto'
+        }).catch(err => {
+            console.error('Cloudinary upload error:', err);
+            throw err;
+        });
+
+        console.log('Upload successful:', result.secure_url);
+
+        // Store the URL
+        const imageData = { 
             url: result.secure_url,
             public_id: result.public_id,
-            timestamp: new Date().toISOString()
+            created_at: new Date()
         };
         uploadedImages.push(imageData);
 
-        res.json(imageData);
+        res.json({ url: result.secure_url });
     } catch (error) {
-        console.error('Error uploading image:', error);
-        res.status(500).json({ error: error.message || 'Failed to upload image' });
+        console.error('Error in upload:', error);
+        res.status(500).json({ error: error.message || 'Error uploading image' });
     }
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).json({ error: err.message || 'Internal server error' });
+app.get('/images', (req, res) => {
+    console.log('Received request for images');
+    console.log('Returning', uploadedImages.length, 'images');
+    res.json(uploadedImages);
 });
 
-// Start server
+// Handle all other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+    console.log(`Server is running on port ${port}`);
 });
