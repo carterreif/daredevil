@@ -14,19 +14,32 @@ cloudinary.config({
 
 // Enable CORS
 app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'https://carterreif.github.io');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
+    // Handle preflight
     if (req.method === 'OPTIONS') {
+        console.log('Handling OPTIONS request');
         return res.status(200).end();
     }
     next();
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
+
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    }
+});
 
 // Store uploaded image URLs in memory (in production, use a database)
 let uploadedImages = [];
@@ -36,31 +49,41 @@ app.use(express.static(__dirname));
 
 // API endpoints
 app.post('/upload', upload.single('image'), async (req, res) => {
+    console.log('Received upload request');
+    
     try {
         if (!req.file) {
-            return res.status(400).send('No file uploaded.');
+            console.log('No file uploaded');
+            return res.status(400).json({ error: 'No file uploaded' });
         }
+
+        console.log('Processing file:', req.file.originalname);
 
         // Convert buffer to base64
         const base64Image = req.file.buffer.toString('base64');
         const dataURI = `data:${req.file.mimetype};base64,${base64Image}`;
 
         // Upload to Cloudinary
+        console.log('Uploading to Cloudinary...');
         const result = await cloudinary.uploader.upload(dataURI, {
             folder: 'daredevil-gallery'
         });
+
+        console.log('Upload successful:', result.secure_url);
 
         // Store the URL
         uploadedImages.push({ url: result.secure_url });
 
         res.json({ url: result.secure_url });
     } catch (error) {
-        console.error('Error uploading to Cloudinary:', error);
-        res.status(500).send('Error uploading image');
+        console.error('Error in upload:', error);
+        res.status(500).json({ error: 'Error uploading image' });
     }
 });
 
 app.get('/images', (req, res) => {
+    console.log('Received request for images');
+    console.log('Returning', uploadedImages.length, 'images');
     res.json(uploadedImages);
 });
 
