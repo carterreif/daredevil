@@ -1,12 +1,11 @@
-// Store uploaded images in localStorage
-let uploadedImages = JSON.parse(localStorage.getItem('daredevilGallery')) || [];
+// Store uploaded images in memory
 let galleryImages = [];
 
 // Get API base URL based on environment
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const apiBaseUrl = isLocalhost 
     ? 'http://localhost:3000'  // Local development
-    : 'https://daredevil-91ykblu61-ajr1073s-projects.vercel.app'; // Production
+    : 'https://daredevil-k17e5b221-ajr1073s-projects.vercel.app'; // Production
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
@@ -17,11 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
     uploadStatus.id = 'uploadStatus';
     document.body.appendChild(uploadStatus);
 
-    // Load existing images from localStorage
-    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-    savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
+    // Add styles for storage indicator
+    const style = document.createElement('style');
+    style.textContent = `
+        .storage-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2;
+        }
+        .gallery-item {
+            position: relative;
+        }
+    `;
+    document.head.appendChild(style);
 
-    // Load existing images
+    // Load existing images from server
     loadImages();
 
     // Handle image upload
@@ -30,28 +45,30 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadImages() {
         showStatus('Loading images...', 'info');
         try {
-            const response = await fetch(`${apiBaseUrl}/images`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
+            const response = await fetch(`${apiBaseUrl}/images`);
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to load images: ${errorText}`);
+                throw new Error('Failed to load images');
             }
 
-            const images = await response.json();
-            if (images.length === 0) {
-                showStatus('No images uploaded yet', 'info');
-            } else {
-                images.forEach(image => addImageToGallery(image.url));
-                showStatus('Images loaded successfully', 'success');
+            const data = await response.json();
+            console.log('Loaded images:', data);
+            
+            galleryGrid.innerHTML = ''; // Clear existing images
+            if (data && Array.isArray(data)) {
+                data.forEach(image => {
+                    if (image && image.url) {
+                        addImageToGallery(image.url);
+                    }
+                });
+                if (data.length === 0) {
+                    showStatus('No images uploaded yet', 'info');
+                } else {
+                    showStatus('Images loaded successfully', 'success');
+                }
             }
         } catch (error) {
             console.error('Error loading images:', error);
-            showStatus('Failed to load images. Please refresh the page.', 'error');
+            showStatus('Failed to load images', 'error');
         }
     }
 
@@ -73,10 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showStatus('Uploading image...', 'info');
 
-        try {
-            const formData = new FormData();
-            formData.append('image', file);
+        const formData = new FormData();
+        formData.append('image', file);
 
+        try {
             console.log('Uploading to:', `${apiBaseUrl}/upload`);
             const response = await fetch(`${apiBaseUrl}/upload`, {
                 method: 'POST',
@@ -84,30 +101,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Upload failed: ${errorText}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Upload failed');
             }
 
             const data = await response.json();
             console.log('Upload response:', data);
-            
-            if (data.url) {
-                console.log('Adding image to gallery:', data.url);
-                addImageToGallery(data.url);
-                
-                // Save to localStorage
-                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                savedImages.push(data.url);
-                localStorage.setItem('galleryImages', JSON.stringify(savedImages));
 
+            if (data.url) {
+                addImageToGallery(data.url);
                 showStatus('Image uploaded successfully!', 'success');
-                imageInput.value = '';
+                imageInput.value = ''; // Clear the input
             } else {
                 throw new Error('No image URL in response');
             }
         } catch (error) {
             console.error('Error uploading image:', error);
-            showStatus(`Failed to upload image: ${error.message}`, 'error');
+            showStatus(`Upload failed: ${error.message}`, 'error');
         }
     }
 
@@ -126,6 +136,20 @@ document.addEventListener('DOMContentLoaded', () => {
             img.style.transition = 'opacity 0.3s ease-in';
             img.style.opacity = '1';
         };
+
+        // Add storage location indicator
+        const storageIndicator = document.createElement('div');
+        storageIndicator.className = 'storage-indicator';
+        if (imageUrl.includes('res.cloudinary.com')) {
+            storageIndicator.textContent = '☁️ Cloud';
+            storageIndicator.title = 'Stored on Cloudinary';
+        } else if (imageUrl.startsWith('data:')) {
+            storageIndicator.textContent = '💻 Local';
+            storageIndicator.title = 'Stored locally';
+        } else {
+            storageIndicator.textContent = '❓ Unknown';
+            storageIndicator.title = 'Unknown storage location';
+        }
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
@@ -133,14 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBtn.onclick = function() {
             if (confirm('Delete this image?')) {
                 container.remove();
-                // Remove from localStorage
-                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                const updatedImages = savedImages.filter(url => url !== imageUrl);
-                localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
             }
         };
         
         container.appendChild(img);
+        container.appendChild(storageIndicator);
         container.appendChild(deleteBtn);
         galleryGrid.appendChild(container);
     }

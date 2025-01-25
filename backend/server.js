@@ -24,7 +24,7 @@ cloudinary.config(cloudinaryConfig);
 // CORS configuration for testing
 const corsOptions = {
     origin: ['https://carterreif.github.io', 'http://localhost:3000', 'http://127.0.0.1:5500'],
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
     allowedHeaders: ['X-CSRF-Token', 'X-Requested-With', 'Accept', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Content-Type', 'Date', 'X-Api-Version'],
     credentials: false,
     optionsSuccessStatus: 200,
@@ -82,7 +82,8 @@ app.post('/upload', upload.single('image'), async (req, res) => {
         });
 
         const result = await cloudinary.uploader.upload(dataURI, {
-            folder: 'daredevil-gallery'
+            folder: 'daredevil-gallery',
+            resource_type: 'auto'
         }).catch(err => {
             console.error('Cloudinary upload error:', err);
             throw err;
@@ -91,12 +92,17 @@ app.post('/upload', upload.single('image'), async (req, res) => {
         console.log('Upload successful:', result.secure_url);
 
         // Store the URL
-        uploadedImages.push({ url: result.secure_url });
+        const imageData = { 
+            url: result.secure_url,
+            public_id: result.public_id,
+            created_at: new Date()
+        };
+        uploadedImages.push(imageData);
 
         res.json({ url: result.secure_url });
     } catch (error) {
         console.error('Error in upload:', error);
-        res.status(500).json({ error: 'Error uploading image: ' + error.message });
+        res.status(500).json({ error: error.message || 'Error uploading image' });
     }
 });
 
