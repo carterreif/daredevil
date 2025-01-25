@@ -5,33 +5,40 @@ let galleryImages = [];
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
     
-    // Load existing images
-    fetch('https://api.imgbb.com/1/upload')
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(image => addImageToGallery(image.url));
-        })
-        .catch(error => console.error('Error loading images:', error));
-
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
+    const IMGUR_CLIENT_ID = '3fa71d3e01e7d0b'; // Public Imgur API client ID
+
+    // Load existing images from localStorage
+    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+    savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
 
     imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
         if (file) {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('key', '2c3bc3298d06482b86d0bcf4aff3c1fc'); // Free ImgBB API key
-
             try {
-                const response = await fetch('https://api.imgbb.com/1/upload', {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('https://api.imgur.com/3/image', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`
+                    },
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                if (data.data && data.data.url) {
-                    addImageToGallery(data.data.url);
+                if (data.success) {
+                    const imageUrl = data.data.link;
+                    addImageToGallery(imageUrl);
+                    
+                    // Save to localStorage
+                    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                    savedImages.push(imageUrl);
+                    localStorage.setItem('galleryImages', JSON.stringify(savedImages));
+                } else {
+                    throw new Error('Failed to upload to Imgur');
                 }
             } catch (error) {
                 console.error('Error uploading image:', error);
@@ -46,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const img = document.createElement('img');
         img.src = imageUrl;
+        img.alt = 'Gallery Image';
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
@@ -53,6 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBtn.onclick = function() {
             if (confirm('Delete this image?')) {
                 container.remove();
+                // Remove from localStorage
+                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                const updatedImages = savedImages.filter(url => url !== imageUrl);
+                localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
             }
         };
         
