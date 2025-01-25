@@ -1090,6 +1090,7 @@ section h2 {
     flex: 1;
     text-align: center;
     max-width: 500px;
+    margin: 0 auto;
 }
 
 .protector-image img {
@@ -1097,13 +1098,15 @@ section h2 {
     height: auto;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(255, 25, 25, 0.3);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     object-fit: cover;
     aspect-ratio: 16/9;
+    display: block;
 }
 
 .protector-image img:hover {
     transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(255, 25, 25, 0.5);
 }
 
 @media (max-width: 768px) {
@@ -1119,5 +1122,6 @@ section h2 {
     .protector-image {
         order: 1;
         max-width: 100%;
+        padding: 0 20px;
     }
 }
