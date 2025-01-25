@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const IMGBB_API_KEY = 'c64c5b70d73c91ef2049252f2d3c9c86'; // New ImgBB API key
+    const IMGBB_API_KEY = '9dd32b1b4cdd11d3d9d9d5eeae6d41d1';  // New API key
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
