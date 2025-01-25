@@ -3,81 +3,88 @@ let uploadedImages = JSON.parse(localStorage.getItem('daredevilGallery')) || [];
 let galleryImages = [];
 
 // Get API base URL based on environment
-const apiBaseUrl = window.location.hostname.includes('github.io') 
-    ? 'https://daredevil-3apgbdnd8-ajr1073s-projects.vercel.app'
-    : '';
+const apiBaseUrl = 'https://daredevil-3apgbdnd8-ajr1073s-projects.vercel.app';
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
+    const uploadStatus = document.createElement('div');
+    uploadStatus.id = 'uploadStatus';
+    document.body.appendChild(uploadStatus);
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
     savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
 
     // Load existing images
-    fetch(`${apiBaseUrl}/images`, {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json'
-        },
-        mode: 'cors'
-    })
-        .then(response => {
+    loadImages();
+
+    // Handle image upload
+    imageInput.addEventListener('change', handleImageUpload);
+
+    async function loadImages() {
+        try {
+            const response = await fetch(`${apiBaseUrl}/images`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                mode: 'cors'
+            });
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
-        })
-        .then(images => {
+
+            const images = await response.json();
             images.forEach(image => addImageToGallery(image.url));
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error loading images:', error);
-            // Handle error gracefully - maybe show a message to the user
-        });
-
-    imageInput.addEventListener('change', async function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            try {
-                const formData = new FormData();
-                formData.append('image', file);
-
-                const response = await fetch(`${apiBaseUrl}/upload`, {
-                    method: 'POST',
-                    body: formData,
-                    mode: 'cors'
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Upload failed: ${errorText}`);
-                }
-
-                const data = await response.json();
-                if (data.url) {
-                    const imageUrl = data.url;
-                    addImageToGallery(imageUrl);
-                    
-                    // Save to localStorage
-                    const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
-                    savedImages.push(imageUrl);
-                    localStorage.setItem('galleryImages', JSON.stringify(savedImages));
-
-                    // Clear the input
-                    imageInput.value = '';
-                } else {
-                    throw new Error('Failed to get image URL from response');
-                }
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                alert('Failed to upload image. Please try again.');
-            }
+            showStatus('Failed to load images. Please refresh the page.', 'error');
         }
-    });
+    }
+
+    async function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        showStatus('Uploading image...', 'info');
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch(`${apiBaseUrl}/upload`, {
+                method: 'POST',
+                body: formData,
+                mode: 'cors'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Upload failed: ${await response.text()}`);
+            }
+
+            const data = await response.json();
+            if (data.url) {
+                addImageToGallery(data.url);
+                
+                // Save to localStorage
+                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                savedImages.push(data.url);
+                localStorage.setItem('galleryImages', JSON.stringify(savedImages));
+
+                showStatus('Image uploaded successfully!', 'success');
+                imageInput.value = '';
+            } else {
+                throw new Error('No image URL in response');
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            showStatus('Failed to upload image. Please try again.', 'error');
+        }
+    }
 
     function addImageToGallery(imageUrl) {
         const container = document.createElement('div');
@@ -104,6 +111,18 @@ document.addEventListener('DOMContentLoaded', () => {
         container.appendChild(img);
         container.appendChild(deleteBtn);
         galleryGrid.appendChild(container);
+    }
+
+    function showStatus(message, type) {
+        uploadStatus.textContent = message;
+        uploadStatus.className = type;
+        uploadStatus.style.display = 'block';
+        
+        if (type === 'success' || type === 'error') {
+            setTimeout(() => {
+                uploadStatus.style.display = 'none';
+            }, 3000);
+        }
     }
 
     // Smooth scrolling for navigation links
