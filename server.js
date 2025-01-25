@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const cors = require('cors');
+const { put } = require('@vercel/blob');
 const app = express();
 
 // Enable CORS
@@ -13,47 +14,40 @@ app.use(express.static(__dirname));
 // Configure GitHub Pages base path
 const basePath = process.env.NODE_ENV === 'production' ? '/daredevil' : '';
 
-// Serve uploads directory
-app.use(`${basePath}/uploads`, express.static('uploads'));
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/')
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname))
-    }
-});
-
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Create uploads directory if it doesn't exist
-const fs = require('fs');
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
-}
-
 // API endpoints
-app.post(`${basePath}/upload`, upload.single('image'), (req, res) => {
+app.post(`${basePath}/upload`, upload.single('image'), async (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
-    res.json({
-        url: `${basePath}/uploads/${req.file.filename}`
-    });
+
+    try {
+        // Upload to Vercel Blob Storage
+        const blob = await put(req.file.originalname, req.file.buffer, {
+            access: 'public',
+        });
+
+        res.json({
+            url: blob.url
+        });
+    } catch (error) {
+        console.error('Error uploading to blob storage:', error);
+        res.status(500).send('Error uploading image');
+    }
 });
 
-app.get(`${basePath}/images`, (req, res) => {
-    fs.readdir('uploads', (err, files) => {
-        if (err) {
-            return res.status(500).send('Error reading uploads directory');
-        }
-        const images = files.map(file => ({
-            url: `${basePath}/uploads/${file}`
-        }));
-        res.json(images);
-    });
+app.get(`${basePath}/images`, async (req, res) => {
+    try {
+        // For demo purposes, we'll return a success but empty array
+        // In a production environment, you would implement listing blobs
+        res.json([]);
+    } catch (error) {
+        console.error('Error listing images:', error);
+        res.status(500).send('Error listing images');
+    }
 });
 
 // Handle GitHub Pages routing
