@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
+    const IMGUR_CLIENT_ID = '0e1df61d873e129';  // Public client ID for Imgur API
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
@@ -16,20 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = event.target.files[0];
         if (file) {
             try {
-                // Convert image file to base64
                 const base64Image = await toBase64(file);
+                const base64Data = base64Image.split(',')[1];
 
-                // Create form data
-                const formData = new FormData();
-                formData.append('source', base64Image);
-                formData.append('type', 'file');
-                formData.append('action', 'upload');
-                formData.append('timestamp', Math.round(new Date().getTime() / 1000));
-                formData.append('auth_token', '');
-
-                const response = await fetch('https://freeimage.host/api/1/upload', {
+                const response = await fetch('https://api.imgur.com/3/image', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: base64Data,
+                        type: 'base64'
+                    })
                 });
 
                 if (!response.ok) {
@@ -38,14 +38,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const data = await response.json();
-                if (data.status_code === 200 && data.image && data.image.url) {
-                    const imageUrl = data.image.url;
+                if (data.success && data.data.link) {
+                    const imageUrl = data.data.link;
                     addImageToGallery(imageUrl);
                     
                     // Save to localStorage
                     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
                     savedImages.push(imageUrl);
                     localStorage.setItem('galleryImages', JSON.stringify(savedImages));
+
+                    // Clear the input
+                    imageInput.value = '';
                 } else {
                     throw new Error('Failed to get image URL from response');
                 }
