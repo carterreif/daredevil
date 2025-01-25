@@ -13,6 +13,53 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
     savedImages.forEach(imageUrl => addImageToGallery(imageUrl));
 
+    // Cloudinary Upload Widget configuration
+    const myWidget = cloudinary.createUploadWidget(
+        {
+            cloudName: 'dqd5x0s7v',
+            uploadPreset: 'daredevil_gallery',
+            sources: ['local', 'url', 'camera'],
+            multiple: false,
+            maxFiles: 1,
+            styles: {
+                palette: {
+                    window: "#000000",
+                    sourceBg: "#000000",
+                    windowBorder: "#8E8E8E",
+                    tabIcon: "#FFFFFF",
+                    inactiveTabIcon: "#8E8E8E",
+                    menuIcons: "#2AD9FF",
+                    link: "#08C0FF",
+                    action: "#336BFF",
+                    inProgress: "#00BFFF",
+                    complete: "#33ff00",
+                    error: "#EA2727",
+                    textDark: "#000000",
+                    textLight: "#FFFFFF"
+                }
+            }
+        },
+        (error, result) => {
+            if (!error && result && result.event === "success") {
+                const imageUrl = result.info.secure_url;
+                addImageToGallery(imageUrl);
+                
+                // Save to localStorage
+                const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
+                savedImages.push(imageUrl);
+                localStorage.setItem('galleryImages', JSON.stringify(savedImages));
+            }
+        }
+    );
+
+    document.getElementById("upload_widget").addEventListener(
+        "click",
+        function () {
+            myWidget.open();
+        },
+        false
+    );
+
     imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
         if (file) {
