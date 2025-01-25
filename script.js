@@ -7,7 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
-    const FILESTACK_API_KEY = 'AYoYwFzURQKOrLm5nXRQEz'; // Public API key
+    const CLOUDINARY_PRESET = 'daredevil_uploads';
+    const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dqd5x0s7v/image/upload';
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
@@ -18,16 +19,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file) {
             try {
                 const formData = new FormData();
-                formData.append('fileUpload', file);
+                formData.append('file', file);
+                formData.append('upload_preset', CLOUDINARY_PRESET);
 
-                const response = await fetch(`https://www.filestackapi.com/api/store/S3?key=${FILESTACK_API_KEY}`, {
+                const response = await fetch(CLOUDINARY_URL, {
                     method: 'POST',
                     body: formData
                 });
 
                 const data = await response.json();
-                if (data.url) {
-                    const imageUrl = data.url;
+                if (data.secure_url) {
+                    const imageUrl = data.secure_url;
                     addImageToGallery(imageUrl);
                     
                     // Save to localStorage
@@ -51,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = 'Gallery Image';
-        img.loading = 'lazy'; // Add lazy loading
+        img.loading = 'lazy';
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
