@@ -17,9 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = event.target.files[0];
         if (file) {
             try {
+                // Convert image file to base64
+                const base64Image = await toBase64(file);
+                const base64Data = base64Image.split(',')[1];
+
+                // Create form data with base64 image
                 const formData = new FormData();
-                formData.append('image', file);
                 formData.append('key', IMGBB_API_KEY);
+                formData.append('image', base64Data);
 
                 const response = await fetch('https://api.imgbb.com/1/upload', {
                     method: 'POST',
@@ -27,7 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData}`);
                 }
 
                 const data = await response.json();
@@ -48,6 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Helper function to convert File to base64
+    function toBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
 
     function addImageToGallery(imageUrl) {
         const container = document.createElement('div');
