@@ -2,24 +2,46 @@
 let uploadedImages = JSON.parse(localStorage.getItem('daredevilGallery')) || [];
 let galleryImages = [];
 
+// Get API base URL based on environment
+const apiBaseUrl = 'https://daredevil-5tvgwdbas-ajr1073s-projects.vercel.app';
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
     
     const imageInput = document.getElementById('imageInput');
     const galleryGrid = document.getElementById('galleryGrid');
+    const FILESTACK_API_KEY = 'AYoYwFzURQKOrLm5nXRQEz';
+
+    // Create status element
+    const uploadStatus = document.createElement('div');
+    uploadStatus.id = 'uploadStatus';
+    document.body.appendChild(uploadStatus);
 
     // Load existing images from localStorage
     const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
     savedImages.forEach(imageData => addImageToGallery(imageData));
 
+    // Load existing images
+    loadImages();
+
+    // Handle image upload
     imageInput.addEventListener('change', async function(event) {
         const file = event.target.files[0];
         if (file) {
             try {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showStatus('Please select an image file', 'error');
+                    return;
+                }
+
                 // Check file size (limit to 2MB to be safe with localStorage)
                 if (file.size > 2 * 1024 * 1024) {
-                    throw new Error('Image too large. Please choose an image under 2MB.');
+                    showStatus('Image must be less than 2MB', 'error');
+                    return;
                 }
+
+                showStatus('Processing image...', 'info');
 
                 // Convert to base64
                 const base64Image = await toBase64(file);
@@ -34,12 +56,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Clear the input
                 imageInput.value = '';
+                showStatus('Image added successfully!', 'success');
             } catch (error) {
                 console.error('Error handling image:', error);
-                alert(error.message || 'Failed to process image. Please try again.');
+                showStatus(error.message || 'Failed to process image. Please try again.', 'error');
             }
         }
     });
+
+    async function loadImages() {
+        showStatus('Loading images...', 'info');
+        try {
+            const response = await fetch(`${apiBaseUrl}/images`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                mode: 'cors'
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to load images: ${errorText}`);
+            }
+
+            const images = await response.json();
+            if (images.length === 0) {
+                showStatus('No images uploaded yet', 'info');
+            } else {
+                images.forEach(image => addImageToGallery(image.url));
+                showStatus('Images loaded successfully', 'success');
+            }
+        } catch (error) {
+            console.error('Error loading images:', error);
+            showStatus('Failed to load images. Please refresh the page.', 'error');
+        }
+    }
 
     // Helper function to convert File to base64
     function toBase64(file) {
@@ -60,6 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
         img.alt = 'Gallery Image';
         img.loading = 'lazy';
         
+        // Add loading indicator
+        img.style.opacity = '0';
+        img.onload = () => {
+            img.style.transition = 'opacity 0.3s ease-in';
+            img.style.opacity = '1';
+        };
+        
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.innerHTML = '×';
@@ -70,12 +129,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const savedImages = JSON.parse(localStorage.getItem('galleryImages') || '[]');
                 const updatedImages = savedImages.filter(data => data !== imageData);
                 localStorage.setItem('galleryImages', JSON.stringify(updatedImages));
+                showStatus('Image deleted', 'success');
             }
         };
         
         container.appendChild(img);
         container.appendChild(deleteBtn);
         galleryGrid.appendChild(container);
+    }
+
+    function showStatus(message, type) {
+        uploadStatus.textContent = message;
+        uploadStatus.className = `status ${type}`;
+        uploadStatus.style.display = 'block';
+        
+        if (type === 'success' || type === 'error') {
+            setTimeout(() => {
+                uploadStatus.style.display = 'none';
+            }, 3000);
+        }
     }
 
     // Smooth scrolling for navigation links
