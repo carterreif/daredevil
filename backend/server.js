@@ -7,11 +7,19 @@ const cors = require('cors');
 const app = express();
 
 // Configure Cloudinary
-cloudinary.config({
+const cloudinaryConfig = {
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
+};
+
+console.log('Cloudinary Configuration:', {
+    cloud_name: cloudinaryConfig.cloud_name,
+    api_key: cloudinaryConfig.api_key ? '***' : 'missing',
+    api_secret: cloudinaryConfig.api_secret ? '***' : 'missing'
 });
+
+cloudinary.config(cloudinaryConfig);
 
 // CORS configuration for testing
 const corsOptions = {
@@ -67,9 +75,17 @@ app.post('/upload', upload.single('image'), async (req, res) => {
         const dataURI = `data:${req.file.mimetype};base64,${base64Image}`;
 
         // Upload to Cloudinary
-        console.log('Uploading to Cloudinary...');
+        console.log('Uploading to Cloudinary with config:', {
+            cloud_name: cloudinaryConfig.cloud_name,
+            api_key: cloudinaryConfig.api_key ? 'present' : 'missing',
+            api_secret: cloudinaryConfig.api_secret ? 'present' : 'missing'
+        });
+
         const result = await cloudinary.uploader.upload(dataURI, {
             folder: 'daredevil-gallery'
+        }).catch(err => {
+            console.error('Cloudinary upload error:', err);
+            throw err;
         });
 
         console.log('Upload successful:', result.secure_url);
@@ -80,7 +96,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
         res.json({ url: result.secure_url });
     } catch (error) {
         console.error('Error in upload:', error);
-        res.status(500).json({ error: 'Error uploading image' });
+        res.status(500).json({ error: 'Error uploading image: ' + error.message });
     }
 });
 

@@ -6,9 +6,7 @@ let galleryImages = [];
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const apiBaseUrl = isLocalhost 
     ? 'http://localhost:3000'  // Local development
-    : window.location.hostname.includes('test') 
-        ? 'https://daredevil-oop7gzf6a-ajr1073s-projects.vercel.app'  // Test environment
-        : 'https://daredevil-oop7gzf6a-ajr1073s-projects.vercel.app'; // Production
+    : 'https://daredevil-91ykblu61-ajr1073s-projects.vercel.app'; // Production
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded');
@@ -36,8 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
-                },
-                mode: 'cors'
+                }
             });
 
             if (!response.ok) {
@@ -80,10 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('image', file);
 
+            console.log('Uploading to:', `${apiBaseUrl}/upload`);
             const response = await fetch(`${apiBaseUrl}/upload`, {
                 method: 'POST',
-                body: formData,
-                mode: 'cors'
+                body: formData
             });
 
             if (!response.ok) {
@@ -92,7 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
+            console.log('Upload response:', data);
+            
             if (data.url) {
+                console.log('Adding image to gallery:', data.url);
                 addImageToGallery(data.url);
                 
                 // Save to localStorage
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error uploading image:', error);
-            showStatus('Failed to upload image. Please try again.', 'error');
+            showStatus(`Failed to upload image: ${error.message}`, 'error');
         }
     }
 
