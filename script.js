@@ -94,10 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showStatus('Uploading image...', 'info');
 
-        const formData = new FormData();
-        formData.append('image', file);
-
         try {
+            const formData = new FormData();
+            formData.append('image', file);
+
             debug('Uploading to:', `${apiBaseUrl}/upload`);
             const response = await fetch(`${apiBaseUrl}/upload`, {
                 method: 'POST',
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             debug('Upload response:', { status: response.status, ok: response.ok });
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
                 throw new Error(errorData.error || 'Upload failed');
             }
 
