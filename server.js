@@ -6,12 +6,19 @@ const { put } = require('@vercel/blob');
 const app = express();
 
 // Enable CORS with specific options
-app.use(cors({
+const corsOptions = {
     origin: ['https://carterreif.github.io', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type'],
+    optionsSuccessStatus: 200,
     credentials: true
-}));
+};
+
+// Enable CORS preflight for all routes
+app.options('*', cors(corsOptions));
+
+// Enable CORS for all routes
+app.use(cors(corsOptions));
 
 // Serve static files from root directory
 app.use(express.static(__dirname));
